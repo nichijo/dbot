@@ -1,3 +1,5 @@
+import { Messageable } from "./messageable";
+
 /**
  * 送受信可能インターフェース
  * 
@@ -8,6 +10,7 @@
  * とりあえずの実装として、まずはおいておく。
  */
 export interface Transmissible {
-    initialize() : void;
-    run() : void;
+    registMessage(msg : Messageable): void;
+    initialize(): void;
+    run(): void;
 }
