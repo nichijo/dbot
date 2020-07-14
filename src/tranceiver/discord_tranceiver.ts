@@ -10,32 +10,46 @@ import { Messageable } from "../adapter/messageable";
  */
 export class DiscordTranceiver implements Transmissible {
 
-    token: string;
+    token: string = '';
+    prefix: string = '';
 
     client = new discord.Client();
 
     // key
-    //   -> () => string
-    //   -> () => string
-    commands: Map<string, Array<() => string>> = new Map();
+    //  |-> () => string
+    //  |-> () => string
+    commandMap: Map<string, Array<() => string>> = new Map();
 
-    constructor(token: string) {
+    // ready list
+    readyList: Array<() => void> = new Array();
+
+    /**
+     * @param token discordのapiトークン
+     * @param prefix デフォルトは`''` コマンドの頭文字に必要な文字を指定する場合は任意の文字を入れる
+     */
+    constructor(token: string, prefix: string = '') {
         this.token = token;
+        this.prefix = prefix;
     }
 
     /**
      * メッセージ登録
+     * @param msg 任意のMessageable
      */
     public registMessage(msg: Messageable) {
         const comName = msg.getCommandName();
         const onMessage = msg.onMessageSend();
-        if (this.commands.get(comName) === undefined) {
+
+        if (this.commandMap.get(comName) === undefined) {
             // undefined の場合は、arrayから生成する
-            this.commands.set(comName, new Array(onMessage));
+            this.commandMap.set(comName, new Array(onMessage));
         } else {
             // undefinedではない場合は、すでにコマンド登録済み。なのでpushで追加する。
-            this.commands.get(comName).push(onMessage);
+            this.commandMap.get(comName).push(onMessage);
         }
+
+        const onReady = msg.onReady();
+        this.readyList.push(onReady);
     }
 
     /**
@@ -44,16 +58,19 @@ export class DiscordTranceiver implements Transmissible {
     public initialize() {
 
         this.client.on('ready', () => {
+            this.readyList.forEach(v => {
+                v();
+            });
             console.log('ready.');
         });
 
-        this.commands.forEach((value, key) => {
+        this.commandMap.forEach((value, key) => {
             this.client.on('message', (msg: discord.Message) => {
                 // contentが一致している場合（ map のキー = コマンド名 という想定 )
-                if (msg.content === key) {
+                if (msg.content === this.prefix + key) {
                     // onMessageイベントを呼んで発言してもらう
                     value.forEach(onMessage => {
-                        msg.channel.send(onMessage())                        
+                        msg.channel.send(onMessage())
                     })
                 }
             })

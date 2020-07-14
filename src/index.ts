@@ -14,6 +14,8 @@ if (TOKEN === undefined) {
 }
 
 let tranceiver: Transmissible = new tran.DiscordTranceiver(TOKEN);
-tranceiver.registMessage( new MessagePing() );
+
+tranceiver.registMessage(new MessagePing());
+
 tranceiver.initialize()
 tranceiver.run();

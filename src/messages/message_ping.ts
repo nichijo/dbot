@@ -5,14 +5,16 @@ import { Messageable } from "../adapter/messageable";
  */
 export class MessagePing implements Messageable {
 
-    public getCommandName(): string { return "ping"; }
-    
-    public onMessageSend(): () => string {
-        return this.send;
+    private com: string;
+
+    public onReady(): () => void {
+        return () => {this.com = "pong"};
     }
 
-    public send() : string {
-        return "pong";
+    public getCommandName(): string { return "ping"; }
+
+    public onMessageSend(): () => string {
+        return () => this.com;
     }
 
 }

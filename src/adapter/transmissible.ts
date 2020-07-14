@@ -10,7 +10,7 @@ import { Messageable } from "./messageable";
  * とりあえずの実装として、まずはおいておく。
  */
 export interface Transmissible {
-    registMessage(msg : Messageable): void;
+    registMessage(msg: Messageable): void;
     initialize(): void;
     run(): void;
 }

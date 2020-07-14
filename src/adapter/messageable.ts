@@ -8,6 +8,12 @@
 export interface Messageable {
 
     getCommandName(): string; 
+
+    /**
+     * 初期化が必要な場合
+     */
+    onReady(): () => void;
+
     /**
      * メッセージ受診時のsend内容
      */
