@@ -5,17 +5,17 @@
  * 
  */
 
-export interface Messageable {
+export interface Messageable<T> {
 
     getCommandName(): string; 
 
     /**
      * 初期化が必要な場合
      */
-    onReady(): () => void;
+    onReady(): (args:T) => void;
 
     /**
      * メッセージ受診時のsend内容
      */
-    onMessageSend(): () => string;
+    onMessageSend(): (args:T) => string;
 }

@@ -1,6 +1,6 @@
 import * as discord from "discord.js";
-import { Transmissible } from "../adapter/transmissible";
-import { Messageable } from "../adapter/messageable";
+import { Transmissible } from "../transmissible";
+import { Messageable } from "../../messages/messageable";
 
 /**
  * Discordトランシーバ実装
@@ -8,7 +8,7 @@ import { Messageable } from "../adapter/messageable";
  * 特に言うことはないが、とりあえず今は仮の処理を入れている。
  * ここで言う、initialize内部でやっている処理をなんかいい感じにしたい。
  */
-export class DiscordTranceiver implements Transmissible {
+export class DiscordTranceiver implements Transmissible<discord.Message> {
 
     token: string = '';
     prefix: string = '';
@@ -18,10 +18,10 @@ export class DiscordTranceiver implements Transmissible {
     // key
     //  |-> () => string
     //  |-> () => string
-    commandMap: Map<string, Array<() => string>> = new Map();
+    commandMap: Map<string, Array<(msg: discord.Message | undefined) => string>> = new Map();
 
     // ready list
-    readyList: Array<() => void> = new Array();
+    readyList: Array<(arg?: discord.Message | undefined) => void> = new Array();
 
     /**
      * @param token discordのapiトークン
@@ -36,7 +36,7 @@ export class DiscordTranceiver implements Transmissible {
      * メッセージ登録
      * @param msg 任意のMessageable
      */
-    public registMessage(msg: Messageable) {
+    public registMessage(msg: Messageable<discord.Message>) {
         const comName = msg.getCommandName();
         const onMessage = msg.onMessageSend();
 
@@ -70,7 +70,7 @@ export class DiscordTranceiver implements Transmissible {
                 if (msg.content === this.prefix + key) {
                     // onMessageイベントを呼んで発言してもらう
                     value.forEach(onMessage => {
-                        msg.channel.send(onMessage())
+                        msg.channel.send(onMessage(msg))
                     })
                 }
             })
