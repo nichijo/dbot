@@ -7,16 +7,13 @@ import { Messageable } from "../messageable";
  */
 export class MessagePing implements Messageable<discord.Message> {
 
-    private com: string;
+    private com: string = "ping";
 
-    public onReady(): () => void {
-        return () => {this.com = "pong"};
+    public onReady(): () => void { return () => { }; }
+
+    public getCommandName(): string { return this.com; }
+
+    public onMessageSend(): (msg: discord.Message) => string {
+        return (msg: discord.Message) => "pong!";
     }
-
-    public getCommandName(): string { return "ping"; }
-
-    public onMessageSend(): (msg:discord.Message) => string {
-        return (msg: discord.Message) => this.com;
-    }
-
 }

@@ -12,7 +12,7 @@ export interface Messageable<T> {
     /**
      * 初期化が必要な場合
      */
-    onReady(): (args:T) => void;
+    onReady(): () => void;
 
     /**
      * メッセージ受診時のsend内容

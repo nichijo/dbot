@@ -8,7 +8,7 @@ import { MessagePing } from "./messages/discord_impl/message_ping";
 // load dotenv files
 dotenv.config()
 
-const {TOKEN} = process.env
+const { TOKEN } = process.env
 
 if (TOKEN === undefined) {
     throw new Error("token is not found");

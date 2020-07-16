@@ -2,6 +2,8 @@ import * as discord from "discord.js";
 import { Transmissible } from "../transmissible";
 import { Messageable } from "../../messages/messageable";
 
+type CommandFunctions = Array<(msg: discord.Message) => string>;
+
 /**
  * Discordトランシーバ実装
  * 
@@ -10,18 +12,17 @@ import { Messageable } from "../../messages/messageable";
  */
 export class DiscordTranceiver implements Transmissible<discord.Message> {
 
-    token: string = '';
-    prefix: string = '';
-
-    client = new discord.Client();
+    private token: string = '';
+    private prefix: string = '';
+    private client = new discord.Client();
 
     // key
     //  |-> () => string
     //  |-> () => string
-    commandMap: Map<string, Array<(msg: discord.Message | undefined) => string>> = new Map();
+    private commandMap: Map<string, CommandFunctions> = new Map<string, CommandFunctions>();
 
     // ready list
-    readyList: Array<(arg?: discord.Message | undefined) => void> = new Array();
+    private readyList: Array<() => void> = new Array();
 
     /**
      * @param token discordのapiトークン
@@ -40,16 +41,16 @@ export class DiscordTranceiver implements Transmissible<discord.Message> {
         const comName = msg.getCommandName();
         const onMessage = msg.onMessageSend();
 
-        if (this.commandMap.get(comName) === undefined) {
-            // undefined の場合は、arrayから生成する
-            this.commandMap.set(comName, new Array(onMessage));
-        } else {
-            // undefinedではない場合は、すでにコマンド登録済み。なのでpushで追加する。
-            this.commandMap.get(comName).push(onMessage);
+        if (comName === undefined) {
+            throw Error("command name undefined.");
         }
 
-        const onReady = msg.onReady();
-        this.readyList.push(onReady);
+        if (this.commandMap.get(comName) === undefined) {
+            this.commandMap.set(comName, new Array());
+        }
+
+        this.commandMap.get(comName)?.push(onMessage);
+        this.readyList.push(msg.onReady());
     }
 
     /**
