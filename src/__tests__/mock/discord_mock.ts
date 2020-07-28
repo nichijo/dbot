@@ -7,6 +7,8 @@ import {
     User,
     GuildMember,
     Message,
+    VoiceChannel,
+    DiscordAPIError,
 } from "discord.js";
 
 export default class MockDiscord {
@@ -17,12 +19,14 @@ export default class MockDiscord {
     private textChannel!: TextChannel;
     private user!: User;
     private guildMember!: GuildMember;
+    private voiceChannel!: VoiceChannel;
     public message!: Message;
 
     constructor() {
         this.mockClient();
         this.mockGuild();
         this.mockChannel();
+        this.mockVoiceChannel();
         this.mockGuildChannel();
         this.mockTextChannel();
         this.mockUser();
@@ -41,6 +45,10 @@ export default class MockDiscord {
 
     public getChannel(): Channel {
         return this.channel;
+    }
+
+    public getVoiceCannel(): VoiceChannel {
+        return this.voiceChannel;
     }
 
     public getGuildChannel(): GuildChannel {
@@ -99,6 +107,13 @@ export default class MockDiscord {
     private mockChannel(): void {
         this.channel = new Channel(this.client, {
             id: "channel-id",
+        });
+    }
+
+    private mockVoiceChannel(): void {
+        this.voiceChannel = new VoiceChannel(this.guild, {
+            id: "channel-id",
+            name: "voice-channel"
         });
     }
 

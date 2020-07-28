@@ -1,8 +1,10 @@
 import * as discord from "discord.js";
-import { Transmissible } from "../transmissible";
-import { Messageable } from "../../messages/messageable";
+import { Transmissible } from "tranceiver/transmissible";
+import { Messageable } from "tranceiver/message_core/messageable";
+import { ValueVoiceState } from "tranceiver/message_core/value_voicestate";
 
 type CommandFunctions = Array<(msg: discord.Message) => string>;
+type onVoiceStateUpdateFunctions = Array<(before: ValueVoiceState, after: ValueVoiceState) => string>;
 
 /**
  * Discordトランシーバ実装
@@ -10,9 +12,10 @@ type CommandFunctions = Array<(msg: discord.Message) => string>;
  * 特に言うことはないが、とりあえず今は仮の処理を入れている。
  * ここで言う、initialize内部でやっている処理をなんかいい感じにしたい。
  */
-export class DiscordTranceiver implements Transmissible<discord.Message> {
+export class DiscordTranceiver implements Transmissible {
 
     private token: string = '';
+    private send_channel_id: string;
     private prefix: string = '';
     private client = new discord.Client();
 
@@ -21,15 +24,20 @@ export class DiscordTranceiver implements Transmissible<discord.Message> {
     //  |-> () => string
     private commandMap: Map<string, CommandFunctions> = new Map<string, CommandFunctions>();
 
+    // fixme: onVoice...をinterfaceに変更すぺ
+    private eventMap: Map<string, onVoiceStateUpdateFunctions> = new Map<string, onVoiceStateUpdateFunctions>();
+
     // ready list
     private readyList: Array<() => void> = new Array();
 
     /**
      * @param token discordのapiトークン
+     * @param send_channel_id 起動時の発言VCチャットルームのID
      * @param prefix デフォルトは`''` コマンドの頭文字に必要な文字を指定する場合は任意の文字を入れる
      */
-    constructor(token: string, prefix: string = '') {
+    constructor({ token, send_channel_id, prefix }: {token:string, send_channel_id:string, prefix:string}) {
         this.token = token;
+        this.send_channel_id = send_channel_id;
         this.prefix = prefix;
     }
 
@@ -37,19 +45,27 @@ export class DiscordTranceiver implements Transmissible<discord.Message> {
      * メッセージ登録
      * @param msg 任意のMessageable
      */
-    public registMessage(msg: Messageable<discord.Message>) {
+    public registMessage(msg: Messageable) {
         const comName = msg.getCommandName();
         const onMessage = msg.onMessageSend();
+        const onVoiceStateUpdate = msg.onVoiceStateUpdate();
 
-        if (comName === undefined) {
-            throw Error("command name undefined.");
+        if (comName.isDefine) {
+            if (this.commandMap.get(comName.name) === undefined) {
+                this.commandMap.set(comName.name, new Array());
+            }
+            this.commandMap.get(comName.name)?.push(onMessage.f);
+            console.log("regist command");
         }
 
-        if (this.commandMap.get(comName) === undefined) {
-            this.commandMap.set(comName, new Array());
+        if (onVoiceStateUpdate.isDefine) {
+            if (this.eventMap.get("onVoiceStateUpdate") === undefined) {
+                this.eventMap.set("onVoiceStateUpdate", new Array());
+            }
+            this.eventMap.get("onVoiceStateUpdate")?.push(onVoiceStateUpdate.f);
+            console.log("registed voiceStateUpdate");
         }
 
-        this.commandMap.get(comName)?.push(onMessage);
         this.readyList.push(msg.onReady());
     }
 
@@ -75,6 +91,45 @@ export class DiscordTranceiver implements Transmissible<discord.Message> {
                     })
                 }
             })
+        });
+
+        this.client.on('voiceStateUpdate', (before, after) => {
+            let beforeName = before.member?.user.username;
+            if (beforeName == null) {
+                beforeName = undefined;
+            }
+
+            let beforeValue = new ValueVoiceState({
+                username: beforeName,
+                voice_channel_name: before.channel?.name
+            });
+
+            let afterName = after.member?.user.username;
+            if (afterName == null) {
+                afterName = undefined;
+            }
+
+            let afterValue = new ValueVoiceState({
+                username: afterName,
+                voice_channel_name: after.channel?.name
+            });
+            console.log("voiceStatusUpdate");
+            console.log(`beforeName : ${beforeValue.username}`);
+            console.log(`beforeVC   : ${beforeValue.voice_channel_name}`);
+            console.log(`afterName : ${afterValue.username}`);
+            console.log(`afterVC   : ${afterValue.voice_channel_name}`);
+
+            this.eventMap.forEach((value, key) => {
+                value.forEach(onVoiceStateUpdate => {
+                    this.client.channels.fetch(this.send_channel_id)
+                        .then(v => {
+                            if (v.type == "text") {
+                                let textChannel = v as discord.TextChannel;
+                                textChannel.send(onVoiceStateUpdate(beforeValue, afterValue));
+                            }
+                        });
+                });
+            });
         });
 
         this.client.on('message', (msg: discord.Message) => {

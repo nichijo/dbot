@@ -1,4 +1,4 @@
-import { Messageable } from "../messages/messageable";
+import { Messageable } from "tranceiver/message_core/messageable";
 
 /**
  * 送受信可能インターフェース
@@ -9,8 +9,8 @@ import { Messageable } from "../messages/messageable";
  * メソッド名があまりドメインを表せていないので
  * とりあえずの実装として、まずはおいておく。
  */
-export interface Transmissible<T> {
-    registMessage(msg: Messageable<T>): void;
+export interface Transmissible {
+    registMessage(msg: Messageable): void;
     initialize(): void;
     run(): void;
 }
